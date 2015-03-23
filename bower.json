@@ -1,0 +1,24 @@
+{
+  "name": "diya-map",
+  "version": "0.0.1",
+  "homepage": "https://github.com/partnering/diya-map",
+  "authors": [
+    "Sylvain Mahe <sylv.mahe@gmail.com>"
+  ],
+  "description": "Diya One Interactive Map",
+  "main": "diya-map.html",
+  "license": "LGPL v3",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "d3": "~3.5.5",
+    "jquery": "~2.1.3",
+    "polymer": "Polymer/polymer#~0.5.5",
+    "hammerjs": "~2.0.4"
+  }
+}
