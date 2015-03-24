@@ -2,9 +2,15 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
+		<meta name="mobile-web-app-capable" content="yes">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0 maximum-scale=1.0, user-scalable=0">
 
 		<script src="bower_components/webcomponentsjs/webcomponents.min.js"></script>
 		<link rel="import" href="diya-map.html">
+
+		<script src="bower_components/diya-sdk/dist/diya-sdk.min.js"></script>
+		<link rel="import" href="bower_components/diya-chooser/diya-chooser.html">
+		<link rel="import" href="bower_components/paper-button/paper-button.html">
 
 		<style>
 			body{
@@ -16,19 +22,47 @@
 
 				width: 100vw;
 				height: 100vh;
-
 			}
 
 			diya-map{
-				width: 80%;
-				height: 80%;
+				width: 100%;
+				height: 100%;
 
 				border: 1px solid black;
+			}
+
+			#controls{
+				position: absolute;
+				left: 0px;
+				top: 0px;
+
+				width: 100%;
+				height: 40px;
+
+				display: flex;
+
+				background: rgba(200,200,200,0.9);
 			}
 		</style>
 
 	</head>
 	<body>
-		<diya-map></diya-map>
+		<template id="app" is="auto-binding">
+			<diya-map diya="{{diya}}"></diya-map>
+
+			<div id="controls">
+				<diya-chooser diya="{{diya}}"></diya-chooser>
+				<paper-button toggle on-tap="{{actionFitMap}}">Fit Map</paper-button>
+			</div>
+		</template>
+
+		<script>
+			var app = document.querySelector("#app");
+
+			app.actionFitMap = function(evt){
+				document.querySelector('diya-map').fitmap = evt.target.active;
+			}
+
+		</script>
 	</body>
 </html>

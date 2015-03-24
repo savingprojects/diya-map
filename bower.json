@@ -19,6 +19,8 @@
     "d3": "~3.5.5",
     "jquery": "~2.1.3",
     "polymer": "Polymer/polymer#~0.5.5",
-    "hammerjs": "~2.0.4"
+    "diya-sdk": "partnering/diya-sdk",
+    "diya-chooser": "partnering/diya-chooser",
+    "paper-button": "Polymer/paper-button#~0.5.5"
   }
 }

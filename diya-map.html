@@ -1,16 +1,19 @@
 <link rel="import" href="bower_components/polymer/polymer.html">
 <script src="bower_components/d3/d3.min.js"></script>
 
-<polymer-element name="diya-map">
+
+<polymer-element name="diya-map" attributes="diya fitmap">
 	<template>
 		<style type="text/css">
 			:host{
 				display: block;
+				position: relative;
 			}
 
 			svg{
 				width: 100%;
 				height: 100%;
+				overflow: hidden;
 			}
 
 			#places{
@@ -18,9 +21,11 @@
 			}
 		</style>
 		
+
+
 		<svg id="map" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
 			<g id="mapContent" x="10" y="10">
-				<image width="100%" height="100%" x="0" y="0" xlink:href="defaultMap.svg" />
+				<image id="mapImage" width="100%" height="100%" x="0" y="0" xlink:href="defaultMap.svg" />
 
 				<g id="places">
 					
@@ -35,36 +40,79 @@
 		ready: function(){
 			var that = this;
 
+			this.PLACE_ACTIVATION_THRESOLD = 0.2;
+
 			this.initMapNavigation();
 			this.initDragPlaceBehavior();
 
-			this.places = [{x: 150, y: 100, r: 10}, {x: 10, y: 100, r: 10}, {x: 250, y: 100, r: 10}];
+			this.places = [];
 			this.updatePlaces();
 
-			setTimeout(function(){
-				that.addPlace();
-			}, 3000);
+			this.currentPlaceId = 0;
+
+			this.fitmap = false;
 		},
 
-		addPlace: function(){
-			this.places.push({x: 300, y: 300, r: 10});
-			this.updatePlaces();
+		addPlace: function(x, y, value, activated){
+			this.places.push({x: x, y: y, value: value, activated: activated});
+			console.log("nbPlaces = "+this.places.length);
+		},
+
+		setCurrentPlace: function(id){
+			if(id >= this.places.length) return ;
+
+			for(var i = 0; i<this.places.length; i++){
+				this.places[i].activated = false;
+			}
+			this.places[id].activated = true;
+		},
+
+		updatePlace: function(id, value){
+
+			if(id < this.places.length){
+				this.places[id].value = value;
+			}
+			else if(id === this.places.length && value > this.PLACE_ACTIVATION_THRESOLD){
+				var vx;
+				var vy;
+
+				if(this.places.length >= 2){
+					vx = 2*this.places[id-1].x - this.places[id-2].x;
+					vy = 2*this.places[id-1].y - this.places[id-2].y;
+				}else if(this.places.length > 0){
+					vx = this.places[id - 1].x + 100;
+					vy = this.places[id - 1].y + 100;
+				}else{
+					vx = 100;
+					vy = 100;
+				}
+
+
+
+				this.addPlace(vx,vy, value, true);
+			}else{
+				return ; //Should not happen
+			}
 		},
 
 		updatePlaces: function(){
+			var that = this;
+
 			var placeElements = d3.select(this.$.places)
 			  .selectAll('.place')
 			  .data(this.places);
-			
+
 			placeElements.enter()
 			  .append('svg:circle')
-			  .attr('class', 'place')
-			  .attr('cx', function(d) { return d.x; })
-			  .attr('cy', function(d) { return d.y; })
-			  .attr('r', function(d) { return d.r; })
-			  .call(this.dragPlaceBehavior)
+			  .call(this.dragPlaceBehavior);
 
 			placeElements.exit().remove();
+
+			placeElements.attr('class', 'place')
+			  .attr('cx', function(d) { return d.x; })
+			  .attr('cy', function(d) { return d.y; })
+			  .attr('r', function(d) { return (d.value - that.PLACE_ACTIVATION_THRESOLD) / that.PLACE_ACTIVATION_THRESOLD * 20 + 5; })
+			  .attr('fill', function(d) { return d.activated ? 'green' : 'black'});
 		},
 
 		initDragPlaceBehavior: function(){
@@ -77,17 +125,17 @@
 
 					d3.select(this)
 					  .transition()
-					  .attr('r', 20)
+					  .attr('fill', 'blue')
 				})
 				.on('drag', function(){
 					d3.select(this)
-					  .attr('cx', d3.event.x)
-					  .attr('cy', d3.event.y)
+					  .attr('cx', function(d){ return d.x = d3.event.x; })
+					  .attr('cy', function(d){ return d.y = d3.event.y; })
 				})
 				.on('dragend', function(){
 					d3.select(this)
 					  .transition()
-					  .attr('r', 10)
+					  .attr('fill', 'black')
 				});
 		},
 
@@ -95,53 +143,118 @@
 		initMapNavigation: function(){
 			var that = this;
 
-			//Drag n Drop for the whole map
-			this.$.mapContent.x = 0;
-			this.$.mapContent.y = 0;
-
 			this.$.mapContent.tx = 0;
 			this.$.mapContent.ty = 0;
 
 			this.$.mapContent.scale = 1;
 
-			function updateTransformation(){
+			function updateMapContent(){
 
-				var x = that.$.mapContent.x+that.$.mapContent.tx;
-				var y = that.$.mapContent.y+that.$.mapContent.ty;
+				var x = d3.event.translate[0];
+				var y = d3.event.translate[1];
+				var scale = d3.event.scale;
 
 				d3.select(that.$.mapContent)
-					.attr('transform', 'translate('+x+','+y+'), scale('+that.$.mapContent.scale+')');
+					.attr('transform', 'translate('+x+','+y+'), scale('+scale+')');
 			}
 
-			this.dragMapBehavior = d3.behavior.drag()
-				.on('dragstart', function(){
-					d3.event.sourceEvent.stopPropagation();
-				})
-				.on('drag', function(){
+			function updateMapImage(){
+				var x = d3.event.translate[0];
+				var y = d3.event.translate[1];
+				var scale = d3.event.scale;
 
-					this.x = this.x + d3.event.dx;
-					this.y = this.y + d3.event.dy;				  
-					  
-					updateTransformation();
-				})
-
-			d3.select(this.$.mapContent)
-			  .call(this.dragMapBehavior);
+				d3.select(that.$.mapImage)
+					.attr('transform', 'translate('+x+','+y+'), scale('+scale+')');
+			}
 
 			//zoom in/out for the whole map
 			this.zoomMapBehavior = d3.behavior.zoom()
+				.scaleExtent([0.1,5])
 				.on('zoom', function(){
-					that.$.mapContent.tx = d3.event.translate[0];
-					that.$.mapContent.ty = d3.event.translate[1];
-					that.$.mapContent.scale = d3.event.scale;
-					updateTransformation();
+					if(that.fitmap){
+						updateMapImage();
+					}else{
+						updateMapContent();
+					}
 				})
 
 			d3.select(this.$.map)
 				.call(this.zoomMapBehavior);
+		},
+
+
+		diyaChanged: function(){
+			if(this.diya){
+				this.diyaConnected(this.diya);
+			}else{
+				this.diyaDisconnected();
+			}
+		},
+
+		diyaConnected: function(diya){
+			this.connectPromethe();
+		},
+
+		diyaDisconnected: function(){
+			
+		},
+
+		connectPromethe: function(){
+			var that = this;
+
+			this.promethe = new diya.Promethe(this.diya);
+
+			this.promethe.onclose = function(){
+				that.prometheDisconnected();
+			};
+			
+			this.promethe.use(/^map\.places$/, function(neuron){
+				if(neuron.type === 'input')
+					that.setPlaceNeuron(neuron);
+				else
+					console.log("error map.places should be an input");
+			});
+
+			this.promethe.connect();
+		},
+
+		prometheDisconnected: function(){
+			var that = this;
+
+			this.promethe = null;
+
+			while(this.places.length){
+				this.places.pop();
+			}
+			this.updatePlaces();
+
+			setTimeout(function(){
+				console.log("try reconnecting promethe");
+				that.connectPromethe();
+			},3000);
+		},
+
+		setPlaceNeuron: function(neuron){
+			var that = this;
+
+			neuron.setOnMessage(function(msg){
+				var placeNeurons = new DataView(msg.data);
+				var maxId = 0;
+
+				for(var i=0; i<neuron.size; i++){
+					var value = placeNeurons.getFloat32(i*4, true);
+					that.updatePlace(i, value);
+					if(value > placeNeurons.getFloat32(maxId*4, true)) maxId = i;
+				}
+
+				if(that.currentPlaceId !== maxId){
+					that.setCurrentPlace(maxId);
+					that.updatePlaces();
+				}
+
+
+			});
 		}
-
-
 	});
 	</script>
 
