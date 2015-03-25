@@ -53,6 +53,7 @@
 			<div id="controls">
 				<diya-chooser diya="{{diya}}"></diya-chooser>
 				<paper-button toggle on-tap="{{actionFitMap}}">Fit Map</paper-button>
+				<paper-button on-tap="{{actionSave}}">Save</paper-button>
 			</div>
 		</template>
 
@@ -61,7 +62,11 @@
 
 			app.actionFitMap = function(evt){
 				document.querySelector('diya-map').fitmap = evt.target.active;
-			}
+			};
+
+			app.actionSave = function(evt){
+				document.querySelector('diya-map').savePlaces();
+			};
 
 		</script>
 	</body>

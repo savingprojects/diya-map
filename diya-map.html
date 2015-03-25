@@ -54,8 +54,15 @@
 		},
 
 		addPlace: function(x, y, value, activated){
+			var that = this;
+
+			var remotePlace = this.getRemotePlace(this.places.length);
+			if(remotePlace){
+				console.log(remotePlace);
+				x = remotePlace.x;
+				y = remotePlace.y;
+			}
 			this.places.push({x: x, y: y, value: value, activated: activated});
-			console.log("nbPlaces = "+this.places.length);
 		},
 
 		setCurrentPlace: function(id){
@@ -116,7 +123,8 @@
 		},
 
 		initDragPlaceBehavior: function(){
-			
+			var that = this;
+
 			//Drag n Drop for Places
 			this.dragPlaceBehavior = d3.behavior.drag()
 				.on('dragstart', function(){
@@ -135,7 +143,8 @@
 				.on('dragend', function(){
 					d3.select(this)
 					  .transition()
-					  .attr('fill', 'black')
+					  .attr('fill', 'black');
+
 				});
 		},
 
@@ -193,10 +202,68 @@
 
 		diyaConnected: function(diya){
 			this.connectPromethe();
+			this.getDefaultMap();
 		},
 
 		diyaDisconnected: function(){
 			
+		},
+
+		getDefaultMap: function(){
+			var that = this;
+
+			this.diya.listen({
+				service: 'maps',
+				func: 'ListenMap',
+				obj: ['default']
+			},function(data){
+				if(data == null) return ;
+
+
+
+				that.currentMapId = data.id;
+
+				for(var i = 0; i<data.places.length; i++){
+					var place = that.places[data.places[i].neuronId];
+					if(!place) continue ;
+
+					place.x = data.places[i].x;
+					place.y = data.places[i].y;
+					place.label = data.places[i].label;
+				}
+
+				that.remotePlaces = data.places;
+
+				that.updatePlaces();
+			});
+		},
+
+		getRemotePlace: function(id){
+			
+			if(this.remotePlaces === undefined) return null;
+
+			for(var i = 0; i<this.remotePlaces.length; i++){
+				if(this.remotePlaces[i].neuronId === id) return this.remotePlaces[i];
+			}
+			return null;
+		},
+
+		savePlaces: function(id){
+			
+			for(var i=0; i<this.places.length; i++){
+				this.diya.get({
+					service: 'maps',
+					func: 'UpdatePlace',
+					data: {
+						mapId: this.currentMapId,
+						neuronId: i,
+						x: this.places[i].x,
+						y: this.places[i].y
+					}
+				},function(data){
+					//Succeed / fail ?
+				});
+			}
 		},
 
 		connectPromethe: function(){
@@ -247,7 +314,7 @@
 					if(value > placeNeurons.getFloat32(maxId*4, true)) maxId = i;
 				}
 
-				if(that.currentPlaceId !== maxId){
+				if(that.currentPlaceId !== maxId || that.places.length === 1){
 					that.setCurrentPlace(maxId);
 					that.updatePlaces();
 				}
