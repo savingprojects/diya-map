@@ -68,6 +68,8 @@
 		setCurrentPlace: function(id){
 			if(id >= this.places.length) return ;
 
+			this.currentPlaceId = id;
+
 			for(var i = 0; i<this.places.length; i++){
 				this.places[i].activated = false;
 			}
@@ -78,6 +80,7 @@
 
 			if(id < this.places.length){
 				this.places[id].value = value;
+				return false;
 			}
 			else if(id === this.places.length && value > this.PLACE_ACTIVATION_THRESOLD){
 				var vx;
@@ -87,18 +90,18 @@
 					vx = 2*this.places[id-1].x - this.places[id-2].x;
 					vy = 2*this.places[id-1].y - this.places[id-2].y;
 				}else if(this.places.length > 0){
-					vx = this.places[id - 1].x + 100;
-					vy = this.places[id - 1].y + 100;
+					vx = this.places[id - 1].x + 10;
+					vy = this.places[id - 1].y + 10;
 				}else{
 					vx = 100;
 					vy = 100;
 				}
 
-
-
 				this.addPlace(vx,vy, value, true);
+
+				return true;
 			}else{
-				return ; //Should not happen
+				return false; //Should not happen
 			}
 		},
 
@@ -118,7 +121,7 @@
 			placeElements.attr('class', 'place')
 			  .attr('cx', function(d) { return d.x; })
 			  .attr('cy', function(d) { return d.y; })
-			  .attr('r', function(d) { return (d.value - that.PLACE_ACTIVATION_THRESOLD) / that.PLACE_ACTIVATION_THRESOLD * 20 + 5; })
+			  .attr('r', function(d) { return d.value * 5; })
 			  .attr('fill', function(d) { return d.activated ? 'green' : 'black'});
 		},
 
@@ -152,10 +155,10 @@
 		initMapNavigation: function(){
 			var that = this;
 
-			this.$.mapContent.tx = 0;
-			this.$.mapContent.ty = 0;
+			this.$.mapImage.tx = 0;
+			this.$.mapImage.ty = 0;
 
-			this.$.mapContent.scale = 1;
+			this.$.mapImage.scale = 1;
 
 			function updateMapContent(){
 
@@ -174,11 +177,15 @@
 
 				d3.select(that.$.mapImage)
 					.attr('transform', 'translate('+x+','+y+'), scale('+scale+')');
+
+				that.$.mapImage.tx = x;
+				that.$.mapImage.ty = y;
+				that.$.mapImage.scale = scale;
 			}
 
 			//zoom in/out for the whole map
 			this.zoomMapBehavior = d3.behavior.zoom()
-				.scaleExtent([0.1,5])
+				.scaleExtent([0.1,20])
 				.on('zoom', function(){
 					if(that.fitmap){
 						updateMapImage();
@@ -191,6 +198,22 @@
 				.call(this.zoomMapBehavior);
 		},
 
+		fitMap: function(fit){
+			this.fitmap = fit;
+			if(!fit){
+				console.log("send"+this.$.mapImage.scale);
+				this.diya.get({
+					service: 'maps',
+					func: 'UpdateMap',
+					obj: [ 'default' ],
+					data: {
+						scale: this.$.mapImage.scale,
+						tx: this.$.mapImage.tx,
+						ty: this.$.mapImage.ty
+					}
+				})
+			}
+		},
 
 		diyaChanged: function(){
 			if(this.diya){
@@ -218,11 +241,16 @@
 				obj: ['default']
 			},function(data){
 				if(data == null) return ;
-
-
-
 				that.currentMapId = data.id;
 
+				console.log(data.tx+":"+data.ty+":"+data.scale);
+
+				//set saved fit map
+				d3.select(that.$.mapImage)
+					.attr('transform', 'translate('+data.tx+','+data.ty+'), scale('+data.scale+')');
+
+
+				//Set saved places
 				for(var i = 0; i<data.places.length; i++){
 					var place = that.places[data.places[i].neuronId];
 					if(!place) continue ;
@@ -307,17 +335,17 @@
 			neuron.setOnMessage(function(msg){
 				var placeNeurons = new DataView(msg.data);
 				var maxId = 0;
+				var newPlace = false;
 
 				for(var i=0; i<neuron.size; i++){
 					var value = placeNeurons.getFloat32(i*4, true);
-					that.updatePlace(i, value);
+					newPlace = that.updatePlace(i, value);
 					if(value > placeNeurons.getFloat32(maxId*4, true)) maxId = i;
 				}
 
-				if(that.currentPlaceId !== maxId || that.places.length === 1){
-					that.setCurrentPlace(maxId);
-					that.updatePlaces();
-				}
+				that.setCurrentPlace(maxId);
+
+				that.updatePlaces();
 
 
 			});
