@@ -294,14 +294,19 @@
 			}
 		},
 
+		clearPlaces: function(){
+			this.diya.get({
+				service: 'maps',
+				func: 'ClearMap',
+				obj: [ 'default' ]
+			});
+		},	
+
 		connectPromethe: function(){
 			var that = this;
 
 			this.promethe = new diya.Promethe(this.diya);
 
-			this.promethe.onclose = function(){
-				that.prometheDisconnected();
-			};
 			
 			this.promethe.use(/^map\.places$/, function(neuron){
 				if(neuron.type === 'input')
@@ -311,22 +316,6 @@
 			});
 
 			this.promethe.connect();
-		},
-
-		prometheDisconnected: function(){
-			var that = this;
-
-			this.promethe = null;
-
-			while(this.places.length){
-				this.places.pop();
-			}
-			this.updatePlaces();
-
-			setTimeout(function(){
-				console.log("try reconnecting promethe");
-				that.connectPromethe();
-			},3000);
 		},
 
 		setPlaceNeuron: function(neuron){
