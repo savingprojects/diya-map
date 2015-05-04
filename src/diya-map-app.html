@@ -1,0 +1,41 @@
+<script src="bower_components/webcomponentsjs/webcomponents.min.js"></script>
+<script src="bower_components/d3/d3.min.js"></script>
+<link rel="import" href="bower_components/polymer/polymer.html">
+<link rel="import" href="diya-map/diya-map.html">
+<link rel="import" href="map-toolbar.html">
+
+<script src="bower_components/diya-sdk/dist/diya-sdk.min.js"></script>
+
+<script type="text/javascript"></script>
+
+<polymer-element name="diya-map-app">
+	<template>
+		<style>
+			:host{
+				margin: 0px;
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				width: 100vw;
+				height: 100vh;
+			}
+
+			diya-map{
+				width: 100%;
+				height: 100%;
+			}
+		</style>
+		<diya-map diya="{{diya}}"></diya-map>
+		<map-toolbar diya="{{diya}}" map="{{map}}"></map-toolbar>
+	</template>
+	<script>
+		Polymer({
+			ready: function(){
+				this.map = this.shadowRoot.querySelector('diya-map');
+			}
+				
+		});
+			
+	</script>
+</polymer-element>

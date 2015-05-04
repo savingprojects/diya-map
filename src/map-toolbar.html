@@ -1,48 +1,112 @@
-<link rel="import" href="bower_components/polymer/polymer.html">
 <link rel="import" href="bower_components/diya-chooser/diya-chooser.html">
-<link rel="import" href="bower_components/paper-button/paper-button.html">
+<link rel="import" href="bower_components/core-menu/core-menu.html">
+<link rel="import" href="bower_components/core-item/core-item.html">
+<link rel="import" href="bower_components/core-icons/core-icons.html">
 		
 <script src="bower_components/diya-sdk/dist/diya-sdk.min.js"></script>
 
 <polymer-element name="map-toolbar" attributes="diya map">
 	<template>
-		<style type="text/css">
+		<style>
 			:host{				
 				position: absolute;
-				display: block;
+				display: flex;
 				top: 0px;
 				left: 0px;
 				width: 100%;
-				height: 40px;
+				height: 60px;
 				background-color: white;
 			}
 			
-			paper-button{
-				margin: 0px;
+			core-menu{
+				top: 0px;
+				left: 0px;
 			}
 			
-			diya-button{
-				width: 100%;
+			core-item{
+				border-bottom: 5px solid black;
+				border-radius: 10px;
+				float: right;
+				height: 100%;
 			}
 			
 		</style>	
-			<paper-button toggle on-tap="{{actionEditPlaces}}" style="background-color: #F5F5FF">Edit places</paper-button>
-			<paper-button toggle on-tap="{{actionFitMap}}" style="background-color: #FFF5F5">Fit Map</paper-button>
-			<diya-chooser diya="{{diya}}"></diya-chooser>	
-			<paper-button on-tap="{{actionSave}}">Save</paper-button>
-			<paper-button on-tap="{{actionClear}}">Clear</paper-button>
-			<paper-button on-tap="{{helper}}">{{map}}m</paper-button>
+			<core-menu id="global" selected="0" layout horizontal>
+				<diya-chooser diya="{{diya}}"></diya-chooser>
+				<core-item icon="create" label="Edit" on-tap="{{menuDown}}"></core-item>	
+				<core-item icon="cloud" label="Air Quality" on-tap="{{menuDown}}"></core-item>		
+			</core-menu>
+			
+			<core-menu id="edit" selected="0" layout horizontal hidden>
+				<core-item icon="chevron-left" on-tap="{{menuUp}}" style="border: none; align: top"></core-item>	
+				<core-item icon="create" label="Edit single" on-tap="{{edit}}"></core-item>
+				<core-item icon="create" label="Edit all" on-tap="{{edit}}"></core-item>	
+				<core-item icon="aspect-ratio" label="Fit map" on-tap="{{fit}}"></core-item>
+				<core-item icon="aspect-ratio" label="Learn" on-tap="{{learn}}"></core-item>
+				<core-item icon="aspect-ratio" label="Forget" on-tap="{{forget}}"></core-item>
+								
+			</core-menu>
+			
+			<core-menu id="data" selected="0" layout horizontal hidden>
+				<core-item icon="chevron-left" on-tap="{{menuUp}}" style="border: none; align: top"></core-item>	
+				<core-item icon="create" label="Show/hide"></core-item>		
+			</core-menu>
 	</template>
 	<script>
 		Polymer({
 			ready: function(){
+				this.opened = true;
 			},
 			
-			helper: function(){
-				console.log(diya);
-				console.log(map);
-			}
+			menuDown: function(e){
+				var active;
+				switch(e.srcElement.label){
+					case "Edit": 
+						active = "edit";
+						break;
+					case "Air Quality":
+						active = "data";
+						break;
+					default:
+						break;
+					}
+				var cm = this.shadowRoot.querySelectorAll('core-menu');
+				for(var i=0; i< cm.length; i++){
+					if(cm[i].id === active)
+						cm[i].hidden = false;
+					else
+						cm[i].hidden = true;
+				}
+			},
 			
+			menuUp: function(){
+				this.map.editPlaces(false);
+				this.map.fitMap(false);
+				var cm = this.shadowRoot.querySelectorAll('core-menu');
+				for(var i=0; i< cm.length; i++){		
+					if(cm[i].id === "global")
+						cm[i].hidden = false;
+					else
+						cm[i].hidden = true;
+				}
+			},
+			
+			edit: function(e){
+				this.map.editPlaces(true);
+				this.map.fitMap(false);
+			},
+			
+			fit: function(){
+				this.map.editPlaces(false);
+				this.map.fitMap(true);
+			},
+			
+			learn: function(){
+				this.map.savePlaces();
+			},
+			forget: function(){
+				this.map.clearPlaces();
+			}
 			});
 	</script>
 </polymer-element>
