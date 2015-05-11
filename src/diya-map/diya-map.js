@@ -13,18 +13,38 @@ Polymer('diya-map', {
 		
 	},
 	
+	sliderChange: function(e){
+		d3.select(this.$.mapImage).attr('transform', 'rotate('+this.selected+')');
+		this.$.mapImage.rotation = this.selected;
+	},
+	
 	editPlaces: function(edit){
 		this.editplaces = edit;
 	},
 
 	fitMap: function(fit){
 		this.fitmap = fit;
+		var map = d3.select(this.$.map);
+		map.on("mousedown.zoom", null);
+		map.on("mousemove.zoom", null);
+		map.on("dblclick.zoom", null);
+		map.on("touchstart.zoom", null);
+		map.on("wheel.zoom", null);
+		map.on("mousewheel.zoom", null);
+		map.on("MozMousePixelScroll.zoom", null);
+		if(this.fitmap){			
+			map.call(this.fitMapBehavior);
+		}
+		else{
+			map.call(this.zoomMapBehavior);
+		}
 		if(!fit && this.diya){
 			this.diya.get({
 				service: 'maps',
 				func: 'UpdateMap',
 				obj: [ 'default' ],
 				data: {
+					rotation: this.$.mapImage.rotation,
 					scale: this.$.mapImage.scale,
 					tx: this.$.mapImage.tx,
 					ty: this.$.mapImage.ty
@@ -39,7 +59,6 @@ Polymer('diya-map', {
 	},
 		
 	updatecurrentPosition: function(){	
-		console.log(this.$.mapImage.scale);	
 		var win = this.places.filter(this.findWinner);
 		var that = this;
 		var diya = d3.select(this.$.diya)
@@ -51,12 +70,7 @@ Polymer('diya-map', {
 		  .attr('cx', function(d) { return d.x-10;})
 		  .attr('cy', function(d) { return d.y-10;})
 		  .attr('r', 10)
-		  .attr('fill', function(d) { return 'red'})
-		  .append('svg:circle')
-		  .attr('cx', function(d) { return d.x-20;})
-		  .attr('cy', function(d) { return d.y-20;})
-		  .attr('r', 10)
-		  .attr('fill', function(d) { return 'orange'});
+		  .attr('fill', function(d) { return 'red'});
 		  
 	  },
 	
@@ -127,7 +141,7 @@ Polymer('diya-map', {
 		placeElements.attr('class', 'place')
 		  .attr('cx', function(d) { return d.x; })
 		  .attr('cy', function(d) { return d.y; })
-		  .attr('r', function(d) { return that.editplaces ? 10:5; }) //d.value * 50
+		  .attr('r', function(d) { return (that.editplaces||that.fitmap) ? 10*that.$.mapImage.scale:5; }) //d.value * 50
 		  .attr('fill', function(d) { return d.winner ? 'green' : 'black'});
 	},
 
@@ -137,16 +151,22 @@ Polymer('diya-map', {
 		this.$.mapImage.tx = 0;
 		this.$.mapImage.ty = 0;
 		this.$.mapImage.scale = 1;
+		this.$.mapImage.rotation = 0;
 
 		function updateMapContent(){
+			if(!that.fitmap){
+			console.log("up "+that.fitmap);
 			var x = d3.event.translate[0];
 			var y = d3.event.translate[1];
 			var scale = d3.event.scale;
 			d3.select(that.$.mapContent)
 				.attr('transform', 'translate('+x+','+y+'), scale('+scale+')');
+			}
 		}
 
-		function updateMapImage(){
+		function updateMapImage(){		
+			if(that.fitmap){
+			console.log("fit "+that.fitmap);	
 			var x = d3.event.translate[0];
 			var y = d3.event.translate[1];
 			var scale = d3.event.scale;
@@ -155,21 +175,22 @@ Polymer('diya-map', {
 			that.$.mapImage.tx = x;
 			that.$.mapImage.ty = y;
 			that.$.mapImage.scale = scale;
+			}
 		}
 
 		//zoom in/out for the whole map
 		this.zoomMapBehavior = d3.behavior.zoom()
 			.scaleExtent([0.1,20])
 			.on('zoom', function(){
-				if(that.fitmap){
-					updateMapImage();
-				}else{
 					updateMapContent();
-				}
 			})
-
-		d3.select(this.$.map)
-			.call(this.zoomMapBehavior);
+		this.fitMapBehavior = d3.behavior.zoom()
+			.scaleExtent([0.1,20])
+			.on('zoom', function(){
+					updateMapImage();
+			})
+			
+		d3.select(this.$.map).call(this.zoomMapBehavior);
 	},
 
 	diyaChanged: function(){
@@ -201,6 +222,7 @@ Polymer('diya-map', {
 			//console.log(data.tx+":"+data.ty+":"+data.scale);
 			d3.select(that.$.mapImage)
 				.attr('transform', 'translate('+data.tx+','+data.ty+'), scale('+data.scale+')');
+			that.fitMapBehavior.translate([data.tx, data.ty]).scale(data.scale);
 			//Set saved places
 			for(var i = 0; i<data.places.length; i++){
 				var place = that.places[data.places[i].neuronId];
@@ -224,14 +246,18 @@ Polymer('diya-map', {
 
 	savePlaces: function(id){		
 		for(var i=0; i<this.places.length; i++){
+			/*console.log(this.$.mapImage.rotation);
+			console.log(this.places[i].x+" "+this.places[i].y);
+			console.log(this.places[i].x*Math.cos(this.$.mapImage.rotation*Math.PI/180));
+			console.log(this.places[i].y*Math.sin(this.$.mapImage.rotation*Math.PI/180));*/
 			this.diya.get({
 				service: 'maps',
 				func: 'UpdatePlace',
 				data: {
 					mapId: this.currentMapId,
 					neuronId: i,
-					x: this.places[i].x,
-					y: this.places[i].y
+					x: this.places[i].x,//*Math.cos(this.$.mapImage.rotation*Math.PI/180),
+					y: this.places[i].y//*Math.sin(this.$.mapImage.rotation*Math.PI/180)
 				}
 			},function(data){
 				//Succeed / fail ?
@@ -276,6 +302,7 @@ Polymer('diya-map', {
 				value = diyaPos.getFloat32(i*4, true);
 				that.setcurrentPosition(value, i);
 			}
+			that.updatecurrentPosition();
 		});
 	},
 
@@ -302,6 +329,5 @@ Polymer('diya-map', {
 			case 2: this.currentPosition.t = value; break;
 			default:break;		
 		}
-		this.updatecurrentPosition();
 	}
 });

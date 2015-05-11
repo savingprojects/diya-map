@@ -31,6 +31,7 @@
 			}
 			
 		</style>	
+		<div layout vertical>
 			<core-menu id="global" selected="0" layout horizontal>
 				<diya-chooser diya="{{diya}}"></diya-chooser>
 				<core-item icon="create" label="Edit" on-tap="{{menuDown}}"></core-item>	
@@ -51,6 +52,7 @@
 				<core-item icon="chevron-left" on-tap="{{menuUp}}" style="border: none; align: top"></core-item>	
 				<core-item icon="create" label="Show/hide"></core-item>		
 			</core-menu>
+		</div>
 	</template>
 	<script>
 		Polymer({
