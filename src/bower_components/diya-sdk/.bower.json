@@ -1,0 +1,35 @@
+{
+  "name": "diya-sdk",
+  "homepage": "https://github.com/partnering/diya-sdk",
+  "authors": [
+    "Sylvain Mahé <sylv.mahe@gmail.com>"
+  ],
+  "description": "SDK for accessing Diya One services",
+  "main": "dist/diya-sdk.min.js",
+  "keywords": [
+    "Diya",
+    "One",
+    "Partnering",
+    "SDK"
+  ],
+  "license": "LGPL v3",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests",
+    "examples",
+    "package.json"
+  ],
+  "_release": "856ef385de",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "856ef385dea8800ccc03bd8cb6ccc3a46078447a"
+  },
+  "_source": "git://github.com/partnering/diya-sdk.git",
+  "_target": "*",
+  "_originalSource": "partnering/diya-sdk"
+}

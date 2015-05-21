@@ -40,10 +40,10 @@
 			
 			<core-menu id="edit" selected="0" layout horizontal hidden>
 				<core-item icon="chevron-left" on-tap="{{menuUp}}" style="border: none; align: top"></core-item>	
-				<core-item icon="create" label="Edit single" on-tap="{{edit}}"></core-item>
-				<core-item icon="create" label="Edit all" on-tap="{{edit}}"></core-item>	
+				<core-item icon="create" label="Edit single" on-tap="{{editSingle}}"></core-item>
+				<core-item icon="create" label="Edit all" on-tap="{{editAll}}"></core-item>	
 				<core-item icon="aspect-ratio" label="Fit map" on-tap="{{fit}}"></core-item>
-				<core-item icon="aspect-ratio" label="Learn" on-tap="{{learn}}"></core-item>
+				<core-item icon="aspect-ratio" label="Save" on-tap="{{save}}"></core-item>
 				<core-item icon="aspect-ratio" label="Forget" on-tap="{{forget}}"></core-item>
 								
 			</core-menu>
@@ -82,7 +82,7 @@
 			},
 			
 			menuUp: function(){
-				this.map.editPlaces(false);
+				this.map.editPlaces(false, false);
 				this.map.fitMap(false);
 				var cm = this.shadowRoot.querySelectorAll('core-menu');
 				for(var i=0; i< cm.length; i++){		
@@ -93,17 +93,22 @@
 				}
 			},
 			
-			edit: function(e){
-				this.map.editPlaces(true);
+			editSingle: function(e){
+				this.map.editPlaces(true, false);
+				this.map.fitMap(false);
+			},
+			
+			editAll: function(e){
+				this.map.editPlaces(false, true);
 				this.map.fitMap(false);
 			},
 			
 			fit: function(){
-				this.map.editPlaces(false);
+				this.map.editPlaces(false, false);
 				this.map.fitMap(true);
 			},
 			
-			learn: function(){
+			save: function(){
 				this.map.savePlaces();
 			},
 			forget: function(){
