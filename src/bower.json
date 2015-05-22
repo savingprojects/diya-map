@@ -21,6 +21,9 @@
     "polymer": "Polymer/polymer#~0.5.5",
     "diya-sdk": "partnering/diya-sdk",
     "diya-chooser": "partnering/diya-chooser",
-    "paper-button": "Polymer/paper-button#~0.5.5"
+    "paper-button": "Polymer/paper-button#~0.5.5",
+    "core-item": "Polymer/core-item#~0.5.6",
+    "core-menu": "Polymer/core-menu#~0.5.6",
+    "paper-slider": "Polymer/paper-slider#~0.5.6"
   }
 }
